@@ -2,6 +2,9 @@ from discord import ApplicationContext, Bot, CheckFailure, Cog, Embed, SlashComm
 from discord.ext.commands import CheckFailure as CommandCheckFailure
 
 from src.utils import get_cat_image_url, mention_command
+from discord import ApplicationContext, Bot, Cog, Embed, slash_command
+
+from src.utils import getcatimageurl, mention_command
 from src.utils.log import get_logger
 
 log = get_logger(__name__)
@@ -18,7 +21,7 @@ class HelpCog(Cog):
         """Shows help for all available commands."""
         embed = Embed(
             title="Help command",
-            image=await get_cat_image_url(),
+            image=await getcatimageurl(),
         )
         for command in self.bot.commands:
             try:
