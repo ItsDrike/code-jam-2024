@@ -167,6 +167,7 @@ reportMissingParameterType = false          # ruff's flake8-annotations (ANN) al
 
 # Too strict for py-cord codebases
 reportIncompatibleMethodOverride = false
+reportUnusedCallResult = false
 
 # Unknown type reporting rules (too strict for most code-bases)
 reportUnknownArgumentType = false
