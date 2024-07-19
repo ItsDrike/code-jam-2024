@@ -1,6 +1,6 @@
 from discord import ApplicationContext, Bot, Cog, Embed, slash_command
 
-from src.utils import getcatimageurl, mention_command
+from src.utils import get_cat_image_url, mention_command
 from src.utils.log import get_logger
 
 log = get_logger(__name__)
@@ -17,7 +17,7 @@ class HelpCog(Cog):
         """Shows help for all available commands."""
         embed = Embed(
             title="Help command",
-            image=await getcatimageurl(),
+            image=await get_cat_image_url(),
         )
         embed.add_field(name=mention_command("ping", self.bot), value="sends a response with pong", inline=False)
         embed.add_field(name=mention_command("help", self.bot), value="gives a list of available commands for users")
