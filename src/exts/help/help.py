@@ -14,7 +14,7 @@ class HelpCog(Cog):
     @slash_command()
     async def help(self, ctx: ApplicationContext) -> None:
         """Help command shows available commands."""
-        await ctx.respond("hello")
+        await ctx.respond(" *hello* ")
 
 
 def setup(bot: Bot) -> None:
