@@ -1,11 +1,9 @@
-import aiohttp
 from discord import ApplicationContext, Bot, Cog, Embed, slash_command
 
-from src.utils import mention_command
+from src.utils import getcatimageurl, mention_command
 from src.utils.log import get_logger
 
 log = get_logger(__name__)
-CAT_URL: str = "https://api.thecatapi.com/v1/images/search"
 
 
 class HelpCog(Cog):
@@ -17,14 +15,9 @@ class HelpCog(Cog):
     @slash_command()
     async def help(self, ctx: ApplicationContext) -> None:
         """Shows help for all available commands."""
-        async with aiohttp.ClientSession() as client, client.get(CAT_URL) as response:
-            response.raise_for_status()
-            data = await response.json()
-            url: str = data[0]["url"]
-
         embed = Embed(
             title="Help command",
-            image=url,
+            image=await getcatimageurl(),
         )
         embed.add_field(name=mention_command("ping", self.bot), value="sends a response with pong", inline=False)
         embed.add_field(name=mention_command("help", self.bot), value="gives a list of available commands for users")
