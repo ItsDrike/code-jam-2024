@@ -28,17 +28,17 @@ class HelpCog(Cog):
             if not can_run:
                 continue
             if isinstance(command, SlashCommand):
-                fields.append((mention_command(command, self.bot), command.description))
+                fields.append((mention_command(command), command.description))
             if isinstance(command, SlashCommandGroup):
                 value = (
                     command.description
                     + "\n\n"
                     + "\n".join(
-                        f"{mention_command(subcommand, self.bot)}: {subcommand.description}"
+                        f"{mention_command(subcommand)}: {subcommand.description}"
                         for subcommand in command.subcommands
                     )
                 )
-                fields.append((f"{mention_command(command, self.bot)} group", value))
+                fields.append((f"{mention_command(command)} group", value))
         new_embed = lambda: discord.Embed(title="help command")
         embeds: list[discord.Embed] = [new_embed()]
         for name, value in fields:
