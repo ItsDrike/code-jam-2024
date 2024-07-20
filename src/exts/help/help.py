@@ -1,10 +1,10 @@
-import aiohttp
 import discord
 from discord import ApplicationContext, Bot, CheckFailure, Cog, SlashCommand, SlashCommandGroup, slash_command
 from discord.ext.commands import CheckFailure as CommandCheckFailure
 from discord.ext.pages import Page, Paginator
 
 from src.utils import mention_command
+from src.utils.cat_api import get_cat_image_url
 from src.utils.log import get_logger
 
 log = get_logger(__name__)
@@ -19,17 +19,8 @@ class HelpCog(Cog):
     @slash_command()
     async def help(self, ctx: ApplicationContext) -> None:
         """Shows help for all available commands."""
+        cat_image_url = await get_cat_image_url()
         fields: list[tuple[str, str]] = []
-
-        async with (
-            aiohttp.ClientSession() as session,
-            session.get("https://api.thecatapi.com/v1/images/search") as resp,
-        ):
-            if resp.status == 200:
-                data = await resp.json()
-                cat_image_url = data[0]["url"]
-            else:
-                cat_image_url = None
 
         for command in self.bot.commands:
             try:
@@ -51,7 +42,7 @@ class HelpCog(Cog):
                 )
                 fields.append((f"{mention_command(command)} group", value))
 
-        new_embed = lambda url: discord.Embed(title="help command").set_image(url=url)
+        new_embed = lambda url: discord.Embed(title="help command").set_thumbnail(url=url)
 
         embeds: list[discord.Embed] = [new_embed(cat_image_url)]
         for name, value in fields:
