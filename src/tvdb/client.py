@@ -86,7 +86,8 @@ class _Media(ABC):
                 self.overview_eng = self.data.overviews.root.get("eng")
         else:
             if self.data.aliases:
-                self.name_eng = next(alias for alias in self.data.aliases if alias.language == "eng").name
+                if name_eng := [alias for alias in self.data.aliases if alias.language == "eng"]:
+                    self.name_eng = name_eng[0].name
             if isinstance(self.data, (SeriesExtendedRecord, MovieExtendedRecord)) and self.data.translations:
                 if self.data.translations.name_translations:
                     self.name_eng = next(
