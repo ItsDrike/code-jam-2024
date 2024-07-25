@@ -55,15 +55,12 @@ class InfoView(discord.ui.View):
                     row=1,
                 )
             )
-            self.add_item(
-                discord.ui.Button(
-                    style=discord.ButtonStyle.danger,
-                    label="View episodes",
-                    emoji="📺",
-                    disabled=True,
-                    row=1,
-                )
+            self.episodes_button = discord.ui.Button(
+                style=discord.ButtonStyle.danger, label="View episodes", emoji="📺", row=1
             )
+            self.add_item(self.episodes_button)
+
+            self.episodes_button.callback = self._episodes_callback
         self.index = 0
 
     def _get_embed(self) -> discord.Embed:
@@ -96,9 +93,19 @@ class InfoView(discord.ui.View):
         await self.message.edit(embed=self._get_embed(), view=self)
         await interaction.response.defer()
 
+    async def _episodes_callback(self, interaction: discord.Interaction) -> None:
+        if isinstance(self._current_result, Movie):
+            raise TypeError("Cannot find episodes for a Movie.")
+        # async with aiohttp.ClientSession() as session:
+        #     episodes = await self._current_result.find_episodes(session=session) # noqa:ERA001
+
     async def send(self, ctx: ApplicationContext) -> None:
         """Send the view."""
         await ctx.respond(embed=self._get_embed(), view=self)
+
+    @property
+    def _current_result(self) -> Movie | Series:
+        return self.results[self.index]
 
 
 class InfoCog(Cog):
