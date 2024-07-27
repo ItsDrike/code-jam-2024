@@ -7,7 +7,7 @@ from .lists import (
     list_remove_item_safe,
     refresh_list_items,
 )
-from .user import user_create_list, user_get, user_get_list_safe, user_get_safe
+from .user import user_create_list, user_get, user_get_list, user_get_list_safe, user_get_safe
 
 __all__ = [
     "user_get",
@@ -21,4 +21,5 @@ __all__ = [
     "refresh_list_items",
     "get_list_item",
     "list_remove_item_safe",
+    "user_get_list",
 ]

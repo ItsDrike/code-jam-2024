@@ -1,9 +1,13 @@
+from collections.abc import Sequence
 from typing import Literal
 
+import discord
 from discord import ApplicationContext, Cog, option, slash_command
 
 from src.bot import Bot
-from src.tvdb import FetchMeta, Movie, Series, TvdbClient
+from src.db_adapters import refresh_list_items, user_get_list
+from src.db_tables.user_list import UserListItem, UserListItemKind
+from src.tvdb import Episode, FetchMeta, Movie, Series, TvdbClient
 from src.tvdb.errors import InvalidIdError
 from src.utils.log import get_logger
 from src.utils.ratelimit import rate_limited
@@ -14,6 +18,36 @@ log = get_logger(__name__)
 
 MOVIE_EMOJI = "🎬"
 SERIES_EMOJI = "📺"
+
+
+async def fetch_items(tvdb_client: TvdbClient, items: list[UserListItem]) -> tuple[list[Movie], list[Episode]]:
+    """Fetch the items from the tvdb API."""
+    movies = []
+    episodes = []
+
+    for item in items:
+        if item.kind == UserListItemKind.MOVIE:
+            movies.append(await Movie.fetch(item.tvdb_id, client=tvdb_client, extended=False))
+        elif item.kind == UserListItemKind.EPISODE:
+            episodes.append(await Episode.fetch(item.tvdb_id, client=tvdb_client, extended=True))
+
+    return movies, episodes
+
+
+def compare_lists(
+    items: Sequence[Movie | Episode], other_items: Sequence[Movie | Episode]
+) -> Sequence[Movie | Episode]:
+    """Compare two lists of items and return the common items."""
+    items_set = {item.id for item in items}
+    set(items_set)
+    other_items_set = {item.id for item in other_items}
+    set(other_items_set)
+
+    common_ids = items_set & other_items_set
+
+    items_dict = {item.id: item for item in items}
+
+    return [items_dict[item_id] for item_id in common_ids]
 
 
 class InfoCog(Cog):
@@ -82,6 +116,45 @@ class InfoCog(Cog):
 
         view = InfoView(self.bot, ctx.user.id, response)
         await view.send(ctx.interaction)
+
+    @slash_command()
+    @option("other", input_type=discord.Member, description="The other user to compare with.")
+    async def compare(self, ctx: ApplicationContext, *, other: discord.Member) -> None:
+        """Compare your lists with another user."""
+        await ctx.defer()
+
+        user_list = await user_get_list(self.bot.db_session, ctx.user.id, "watched")
+        if not user_list:
+            await ctx.respond("You have no watched items.", ephemeral=True)
+            return
+        await refresh_list_items(self.bot.db_session, user_list)
+        if not user_list.items:
+            await ctx.respond("You have no watched items.", ephemeral=True)
+        other_user_list = await user_get_list(self.bot.db_session, other.id, "watched")
+        if not other_user_list:
+            await ctx.respond(f"{other.display_name} has no watched items.", ephemeral=True)
+            return
+        await refresh_list_items(self.bot.db_session, other_user_list)
+        if not other_user_list.items:
+            await ctx.respond(f"{other.display_name} has no watched items.", ephemeral=True)
+            return
+
+        movies, episodes = await fetch_items(self.tvdb_client, user_list.items)
+
+        other_movies, other_episodes = await fetch_items(self.tvdb_client, other_user_list.items)
+
+        common_movies = compare_lists(movies, other_movies)
+        common_episodes = compare_lists(episodes, other_episodes)
+
+        embed = discord.Embed(title="Common Items", color=discord.Color.blurple())
+        if common_movies:
+            movie_names = "\n".join(f"{MOVIE_EMOJI} {movie.name}" for movie in common_movies)
+            embed.add_field(name="Movies", value=movie_names)
+        if common_episodes:
+            episode_names = "\n".join(f"{SERIES_EMOJI} {episode.name}" for episode in common_episodes)
+            embed.add_field(name="Episodes", value=episode_names)
+
+        await ctx.respond(embed=embed)
 
 
 def setup(bot: Bot) -> None:

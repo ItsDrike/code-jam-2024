@@ -17,6 +17,8 @@ async def ensure_media(session: AsyncSession, tvdb_id: int, kind: UserListItemKi
             cls = Episode
     media = await session.get(cls, tvdb_id)
     if media is None:
+        if not isinstance(cls, Episode):
+            kwargs.pop("series_id", None)
         media = cls(tvdb_id=tvdb_id, **kwargs)
         session.add(media)
         await session.commit()

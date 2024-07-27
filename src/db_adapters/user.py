@@ -21,13 +21,15 @@ async def user_get_safe(session: AsyncSession, discord_id: int) -> User:
     return user
 
 
-async def user_get_list(session: AsyncSession, user: User, name: str) -> UserList | None:
+async def user_get_list(session: AsyncSession, user: User | int, name: str) -> UserList | None:
     """Get a user's list by name."""
     # use where clause on user.id and name
+    if isinstance(user, User):
+        user = user.discord_id
     user_list = await session.execute(
         select(UserList)
         .where(
-            UserList.user_id == user.discord_id,
+            UserList.user_id == user,
         )
         .where(UserList.name == name)
     )
