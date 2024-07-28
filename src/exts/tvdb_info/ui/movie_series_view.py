@@ -61,7 +61,7 @@ class _SeriesOrMovieView(MediaView):
             item = await get_list_item(self.bot.db_session, self.favorite_list, self.media_data.id, self._db_item_kind)
             if item is None:
                 raise ValueError("Media is not marked as favorite, can't re-mark as favorite.")
-            await list_remove_item(self.bot.db_session, self.watched_list, item)
+            self.watched_list = await list_remove_item(self.bot.db_session, self.watched_list, item)
         else:
             try:
                 await list_put_item(self.bot.db_session, self.favorite_list, self.media_data.id, self._db_item_kind)
@@ -85,7 +85,7 @@ class _SeriesOrMovieView(MediaView):
             item = await get_list_item(self.bot.db_session, self.watched_list, self.media_data.id, self._db_item_kind)
             if item is None:
                 raise ValueError("Media is not marked as watched, can't re-mark as unwatched.")
-            await list_remove_item(self.bot.db_session, self.watched_list, item)
+            self.watched_list = await list_remove_item(self.bot.db_session, self.watched_list, item)
         else:
             try:
                 await list_put_item(self.bot.db_session, self.watched_list, self.media_data.id, self._db_item_kind)
@@ -213,14 +213,14 @@ class SeriesView(_SeriesOrMovieView):
                 if not episode.id:
                     raise ValueError("Episode has no ID")
 
-                await list_remove_item_safe(
+                self.watched_list = await list_remove_item_safe(
                     self.bot.db_session,
                     self.watched_list,
                     episode.id,
                     UserListItemKind.EPISODE,
                 )
 
-            await refresh_list_items(self.bot.db_session, self.watched_list)
+            self.watched_list = await refresh_list_items(self.bot.db_session, self.watched_list)
         else:
             for episode in self.media_data.episodes:
                 if not episode.id:

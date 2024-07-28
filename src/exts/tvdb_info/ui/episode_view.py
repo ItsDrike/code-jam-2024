@@ -141,7 +141,7 @@ class EpisodeView(DynamicMediaView):
             )
             if item is None:
                 raise ValueError("Episode is not marked as watched, can't re-mark as unwatched.")
-            await list_remove_item(self.bot.db_session, self.watched_list, item)
+            self.watched_list = await list_remove_item(self.bot.db_session, self.watched_list, item)
         else:
             try:
                 await list_put_item(
