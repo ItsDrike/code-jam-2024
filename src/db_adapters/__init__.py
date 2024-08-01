@@ -7,6 +7,8 @@ from .lists import (
     list_remove_item_safe,
     refresh_list_items,
 )
+from .media import series_get
+from .misc import refresh
 from .user import user_create_list, user_get, user_get_list_safe, user_get_safe
 
 __all__ = [
@@ -21,4 +23,6 @@ __all__ = [
     "refresh_list_items",
     "get_list_item",
     "list_remove_item_safe",
+    "refresh",
+    "series_get",
 ]

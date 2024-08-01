@@ -5,7 +5,7 @@ from typing import final
 import discord
 
 from src.bot import Bot
-from src.db_adapters import refresh_list_items
+from src.db_adapters import refresh, refresh_list_items, series_get
 from src.db_tables.media import Episode as EpisodeTable, Movie as MovieTable, Series as SeriesTable
 from src.db_tables.user_list import UserList, UserListItemKind
 from src.exts.error_handler.view import ErrorHandledView
@@ -49,8 +49,8 @@ class ProfileView(ErrorHandledView):
 
     async def _initialize(self) -> None:
         """Initialize the view, obtaining any necessary state."""
-        await refresh_list_items(self.bot.db_session, self.watched_list)
-        await refresh_list_items(self.bot.db_session, self.favorite_list)
+        self.watched_list = await refresh_list_items(self.bot.db_session, self.watched_list)
+        self.favorite_list = await refresh_list_items(self.bot.db_session, self.favorite_list)
 
         watched_movies: list[MovieTable] = []
         watched_shows: list[SeriesTable] = []
@@ -60,14 +60,14 @@ class ProfileView(ErrorHandledView):
         for item in self.watched_list.items:
             match item.kind:
                 case UserListItemKind.MOVIE:
-                    await self.bot.db_session.refresh(item, ["movie"])
+                    item = await refresh(self.bot.db_session, item, ["movie"])
                     watched_movies.append(item.movie)
                 case UserListItemKind.SERIES:
-                    await self.bot.db_session.refresh(item, ["series"])
+                    item = await refresh(self.bot.db_session, item, ["series"])
                     watched_shows.append(item.series)
                 case UserListItemKind.EPISODE:
-                    await self.bot.db_session.refresh(item, ["episode"])
-                    await self.bot.db_session.refresh(item.episode, ["series"])
+                    item = await refresh(self.bot.db_session, item, ["episode"])
+                    item.episode = await refresh(self.bot.db_session, item.episode, ["series"])
                     watched_episodes.append(item.episode)
 
         # We don't actually care about episodes in the profile view, however, we need them
@@ -91,10 +91,10 @@ class ProfileView(ErrorHandledView):
 
             group_episode_ids = {episode.tvdb_id for episode in episodes_it}
             group_episode_ids.add(first_db_episode.tvdb_id)
-            await self.bot.db_session.refresh(first_db_episode, ["series"])
+            first_db_episode = await refresh(self.bot.db_session, first_db_episode, ["series"])
 
             if first_db_episode.series is None:  # pyright: ignore[reportUnnecessaryComparison]
-                manual = await self.bot.db_session.get(SeriesTable, first_db_episode.series_id)
+                manual = await series_get(self.bot.db_session, first_db_episode.series_id)
                 raise ValueError(f"DB series is None id={first_db_episode.series_id}, manual={manual}")
 
             if last_episode.id in group_episode_ids:
@@ -108,10 +108,10 @@ class ProfileView(ErrorHandledView):
         for item in self.favorite_list.items:
             match item.kind:
                 case UserListItemKind.MOVIE:
-                    await self.bot.db_session.refresh(item, ["movie"])
+                    item = await refresh(self.bot.db_session, item, ["movie"])
                     favorite_movies.append(item.movie)
                 case UserListItemKind.SERIES:
-                    await self.bot.db_session.refresh(item, ["series"])
+                    item = await refresh(self.bot.db_session, item, ["series"])
                     favorite_shows.append(item.series)
                 case UserListItemKind.EPISODE:
                     raise TypeError("Found an episode in favorite list")
