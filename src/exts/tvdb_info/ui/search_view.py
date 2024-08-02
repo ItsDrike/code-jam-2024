@@ -89,7 +89,7 @@ async def search_view(
     user = await user_get_safe(bot.db_session, user_id)
     watched_list = await user_get_list_safe(bot.db_session, user, "watched")
     favorite_list = await user_get_list_safe(bot.db_session, user, "favorite")
-    await refresh_list_items(bot.db_session, watched_list)
-    await refresh_list_items(bot.db_session, favorite_list)
+    watched_list = await refresh_list_items(bot.db_session, watched_list)
+    favorite_list = await refresh_list_items(bot.db_session, favorite_list)
 
     return _search_view(bot, user_id, invoker_user_id, watched_list, favorite_list, results, 0)

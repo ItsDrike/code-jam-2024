@@ -8,22 +8,29 @@ from src.db_tables.user_list import UserListItemKind
 
 async def ensure_media(session: AsyncSession, tvdb_id: int, kind: UserListItemKind, **kwargs: Any) -> None:
     """Ensure that a tvdb media item is present in its respective table."""
-    match kind:
-        case UserListItemKind.MOVIE:
-            cls = Movie
-        case UserListItemKind.SERIES:
-            cls = Series
-        case UserListItemKind.EPISODE:
-            cls = Episode
-    media = await session.get(cls, tvdb_id)
-    if media is None:
-        media = cls(tvdb_id=tvdb_id, **kwargs)
-        session.add(media)
-        await session.commit()
-
-    if isinstance(media, Episode):
-        await session.refresh(media, ["series"])
-        if not media.series:
-            series = Series(tvdb_id=kwargs["series_id"])
-            session.add(series)
+    async with session:
+        match kind:
+            case UserListItemKind.MOVIE:
+                cls = Movie
+            case UserListItemKind.SERIES:
+                cls = Series
+            case UserListItemKind.EPISODE:
+                cls = Episode
+        media = await session.get(cls, tvdb_id)
+        if media is None:
+            media = cls(tvdb_id=tvdb_id, **kwargs)
+            session.add(media)
             await session.commit()
+
+        if isinstance(media, Episode):
+            await session.refresh(media, ["series"])
+            if not media.series:
+                series = Series(tvdb_id=kwargs["series_id"])
+                session.add(series)
+                await session.commit()
+
+
+async def series_get(session: AsyncSession, tvdb_id: int) -> Series | None:
+    """Get a series from the database."""
+    async with session:
+        return await session.get(Series, tvdb_id)
